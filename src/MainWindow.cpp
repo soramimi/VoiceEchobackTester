@@ -9,6 +9,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <utility>
+#include <memory>
 
 struct MainWindow::Private {
 	QList<QAudioDeviceInfo> audio_input_devices;
@@ -138,7 +139,7 @@ void MainWindow::setOutputLevel(int16_t const *p, int n)
 void MainWindow::onReadyRead()
 {
 	if (m->state == State::Recording) {
-		if (m->record_bytes < m->buffer.size()) {
+        if (m->record_bytes < (int)m->buffer.size()) {
 			int n = m->audio_input->bytesReady();
 			n = std::min(n, int(m->buffer.size() - m->record_bytes));
 			if (n > 0) {
