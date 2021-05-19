@@ -71,6 +71,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 	ui->comboBox_length->setCurrentIndex(0);
 
+	ui->pushButton_start->setFocus();
 
 	startTimer(10);
 	setState(State::Stop);

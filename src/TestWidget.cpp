@@ -1,13 +1,13 @@
-#include "LevelMeterWidget.h"
+#include "TestWidget.h"
 
 #include <QPainter>
 
-LevelMeterWidget::LevelMeterWidget(QWidget *parent)
+TestWidget::TestWidget(QWidget *parent)
 	: QWidget(parent)
 {
 }
 
-void LevelMeterWidget::paintEvent(QPaintEvent *event)
+void TestWidget::paintEvent(QPaintEvent *event)
 {
 	QPainter pr(this);
 	QRect r = rect();
@@ -17,7 +17,7 @@ void LevelMeterWidget::paintEvent(QPaintEvent *event)
 	pr.fillRect(r, Qt::green);
 }
 
-void LevelMeterWidget::setPercent(float percent)
+void TestWidget::setPercent(float percent)
 {
 	percent_ = percent;
 	update();

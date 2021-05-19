@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>385</width>
-    <height>214</height>
+    <width>404</width>
+    <height>368</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QFormLayout" name="formLayout">
+    <layout class="QGridLayout" name="gridLayout">
      <item row="0" column="0">
       <widget class="QLabel" name="label_3">
        <property name="text">
@@ -26,6 +26,22 @@
      <item row="0" column="1">
       <widget class="QComboBox" name="comboBox_input"/>
      </item>
+     <item row="1" column="1">
+      <widget class="LevelMeterWidget" name="widget_input_level" native="true">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>8</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>8</height>
+        </size>
+       </property>
+      </widget>
+     </item>
      <item row="2" column="0">
       <widget class="QLabel" name="label_4">
        <property name="text">
@@ -35,6 +51,22 @@
      </item>
      <item row="2" column="1">
       <widget class="QComboBox" name="comboBox_output"/>
+     </item>
+     <item row="3" column="1">
+      <widget class="LevelMeterWidget" name="widget_output_level" native="true">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
+         <height>8</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>8</height>
+        </size>
+       </property>
+      </widget>
      </item>
      <item row="4" column="0">
       <widget class="QLabel" name="label_5">
@@ -98,38 +130,6 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="1">
-      <widget class="LevelMeterWidget" name="widget_input_level" native="true">
-       <property name="minimumSize">
-        <size>
-         <width>0</width>
-         <height>8</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>16777215</width>
-         <height>8</height>
-        </size>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="LevelMeterWidget" name="widget_output_level" native="true">
-       <property name="minimumSize">
-        <size>
-         <width>0</width>
-         <height>8</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>16777215</width>
-         <height>8</height>
-        </size>
-       </property>
-      </widget>
-     </item>
     </layout>
    </item>
    <item>
@@ -182,6 +182,12 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>pushButton_start</tabstop>
+  <tabstop>comboBox_input</tabstop>
+  <tabstop>comboBox_output</tabstop>
+  <tabstop>comboBox_length</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

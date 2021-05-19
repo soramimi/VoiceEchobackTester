@@ -12,6 +12,7 @@ namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
 class LevelMeterWidget;
+class TestWidget;
 
 enum class State {
 	Stop,
