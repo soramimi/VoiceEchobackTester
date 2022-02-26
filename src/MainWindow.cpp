@@ -10,6 +10,7 @@
 #include <QMessageBox>
 #include <utility>
 #include <memory>
+#include <QDebug>
 
 struct MainWindow::Private {
 	QList<QAudioDeviceInfo> audio_input_devices;
@@ -20,9 +21,12 @@ struct MainWindow::Private {
 	QIODevice *input_device = nullptr;
 	QIODevice *output_device = nullptr;
 
+	int duration = 3;
+	size_t max_record_size = 0;
+
 	State state = State::Stop;
 	std::vector<uint8_t> buffer;
-	int record_bytes = 0;
+	int recorded_bytes = 0;
 	int play_bytes = 0;
 
 	int count = 0;
@@ -85,7 +89,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::setLength(int seconds)
 {
-	m->buffer.resize(48000 * 4 * seconds);
+	m->max_record_size = 48000 * 4 * seconds;
+	m->buffer.resize(m->max_record_size + 20000);
 }
 
 void MainWindow::setState(State state)
@@ -108,11 +113,11 @@ void MainWindow::setState(State state)
 
 void MainWindow::start()
 {
-	int len = ui->comboBox_length->currentData().toInt();
-	setLength(len);
+	m->duration = ui->comboBox_length->currentData().toInt();
+	setLength(m->duration + 1);
 	ui->progressBar_recording->setValue(0);
 	ui->progressBar_playback->setValue(0);
-	m->record_bytes = 0;
+	m->recorded_bytes = 0;
 	m->play_bytes = 0;
 	setState(State::Recording);
 }
@@ -140,15 +145,16 @@ void MainWindow::setOutputLevel(int16_t const *p, int n)
 void MainWindow::onReadyRead()
 {
 	if (m->state == State::Recording) {
-        if (m->record_bytes < (int)m->buffer.size()) {
+		if (m->recorded_bytes < m->max_record_size) {
 			int n = m->audio_input->bytesReady();
-			n = std::min(n, int(m->buffer.size() - m->record_bytes));
+			n = std::min(n, int(m->buffer.size() - m->recorded_bytes));
 			if (n > 0) {
-				n = m->input_device->read((char *)m->buffer.data() + m->record_bytes, n);
-				setInputLevel((int16_t const *)(m->buffer.data() + m->record_bytes), n / 2);
-				m->record_bytes += n;
+				fprintf(stderr, "%d\n", n);
+				n = m->input_device->read((char *)m->buffer.data() + m->recorded_bytes, n);
+				setInputLevel((int16_t const *)(m->buffer.data() + m->recorded_bytes), n / 2);
+				m->recorded_bytes += n;
 			}
-			float percent = 100 * m->record_bytes / m->buffer.size();
+			float percent = 100 * m->recorded_bytes / m->max_record_size;
 			ui->progressBar_recording->setValue(int(percent * 10));
 			goto done;
 		} else {
@@ -168,14 +174,14 @@ void MainWindow::timerEvent(QTimerEvent *event)
 {
 	if (m->state == State::Playing) {
 		int bytes = m->audio_output->bytesFree();
-		if (m->play_bytes < m->record_bytes) {
-			int n = std::min(bytes, m->record_bytes - m->play_bytes);
+		if (m->play_bytes < m->recorded_bytes) {
+			int n = std::min(bytes, m->recorded_bytes - m->play_bytes);
 			if (n >= 2) {
 				n = m->output_device->write((char const *)m->buffer.data() + m->play_bytes, n);
 				setOutputLevel((int16_t const *)(m->buffer.data() + m->play_bytes), n / 2);
 				m->play_bytes += n;
 				bytes -= n;
-				float percent = 100 * m->play_bytes / m->record_bytes;
+				float percent = 100 * m->play_bytes / m->recorded_bytes;
 				ui->progressBar_playback->setValue(int(percent * 10));
 			}
 			goto done;
