@@ -8,6 +8,8 @@ Global *global = nullptr;
 
 int main(int argc, char *argv[])
 {
+	putenv("QT_ASSUME_STDERR_HAS_CONSOLE=1");
+
 	Global g;
 	global = &g;
 

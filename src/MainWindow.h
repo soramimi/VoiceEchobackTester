@@ -1,8 +1,8 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QDialog>
 #include "main.h"
+#include <QDialog>
 #include <stdint.h>
 
 class Video;
