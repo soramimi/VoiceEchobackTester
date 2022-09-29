@@ -10,6 +10,7 @@
 
 class QAudioDevice;
 class QAudioInput;
+class AudioDevice;
 
 class QueueWriter : public QIODevice {
 public:
@@ -38,7 +39,20 @@ public:
 	std::deque<uint8_t> queue_;
 	QueueWriter writer_;
 	QueueReader reader_;
-	void start(QAudioFormat const &format);
+	void start(const AudioDevice &dev, QAudioFormat const &format);
+	void stop();
+	qint64 bytesAvailable() const
+	{
+		return reader_.bytesAvailable();
+	}
+	int read(char *data, int maxlen)
+	{
+		return reader_.read(data, maxlen);
+	}
+	QByteArray readAll()
+	{
+		return reader_.read(reader_.bytesAvailable());
+	}
 };
 
 #endif // MYAUDIOINPUT6_H

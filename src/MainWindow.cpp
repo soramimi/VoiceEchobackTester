@@ -1,9 +1,7 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
-#include "MyAudio.h"
 #include "MySettings.h"
-#include <QAudioInput>
-#include <QAudioOutput>
+#include "AudioDevice.h"
 #include <QBuffer>
 #include <QClipboard>
 #include <QFileDialog>
@@ -14,10 +12,8 @@
 
 
 struct MainWindow::Private {
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-	QList<QAudioDeviceInfo> audio_input_devices;
-#else
-#endif
+	AudioDevices input_devices;
+	AudioDevices output_devices;
 	QAudioFormat audio_format;
 	MyAudioInput input;
 	MyAudioOutput output;
@@ -49,40 +45,27 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->comboBox_length->addItem("5", QVariant(5));
 	ui->comboBox_length->addItem("10", QVariant(10));
 
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-	m->audio_format.setByteOrder(QAudioFormat::LittleEndian);
-	m->audio_format.setChannelCount(2);
-	m->audio_format.setCodec("audio/pcm");
-	m->audio_format.setSampleRate(48000);
-	m->audio_format.setSampleSize(16);
-	m->audio_format.setSampleType(QAudioFormat::SignedInt);
-	m->audio_input_devices = QAudioDeviceInfo::availableDevices(QAudio::AudioInput);
-#else
-	m->audio_format.setChannelCount(2);
-	m->audio_format.setSampleRate(48000);
-	m->audio_format.setSampleFormat(QAudioFormat::Int16);
-#endif
+	m->audio_format = MyAudio::defaultAudioFormat();
+	m->input_devices.fetchDevices(AudioDevices::AudioInput);
+	m->output_devices.fetchDevices(AudioDevices::AudioOutput);
+	for (int i = 0; i < m->input_devices.size(); i++) {
+		AudioDevice dev = m->input_devices.device(i);
+		QString name = dev.text();
+		ui->comboBox_input->addItem(name, name);
+	}
+	for (int i = 0; i < m->output_devices.size(); i++) {
+		AudioDevice dev = m->output_devices.device(i);
+		QString name = dev.text();
+		ui->comboBox_output->addItem(name, name);
+	}
 
-//	m->audio_output_devices = QAudioDeviceInfo::availableDevices(QAudio::AudioOutput);
-//	for (QAudioDeviceInfo const &dev : m->audio_input_devices) {
-//		QString name = dev.deviceName();
-//		ui->comboBox_input->addItem(name, name);
-//	}
-//	for (QAudioDeviceInfo const &dev : m->audio_output_devices) {
-//		QString name = dev.deviceName();
-//		ui->comboBox_output->addItem(name, name);
-//	}
 
-	m->input.start(m->audio_format);
-	m->output.start(m->audio_format);
+	m->input.start(AudioDevices::defaultAudioInputDevice(), m->audio_format);
+	m->output.start(AudioDevices::defaultAudioOutputDevice(), m->audio_format);
 
 #if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-	connect(m->input.io_, &QIODevice::readyRead, this, &MainWindow::onReadyRead);
+	connect(m->input.reader_, &QIODevice::readyRead, this, &MainWindow::onReadyRead);
 #endif
-
-//	m->audio_output = std::shared_ptr<QAudioOutput>(new QAudioOutput(m->audio_format));
-//	m->output_device = m->audio_output->start();
-
 
 	ui->comboBox_length->setCurrentIndex(0);
 
@@ -157,46 +140,25 @@ void MainWindow::onReadyRead()
 {
 	if (m->state == State::Recording) {
 		if (m->recorded_bytes < m->max_record_size) {
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-			int n = m->input.input_->bytesReady();
+			int n = m->input.bytesAvailable();
 			n = std::min(n, int(m->recording_buffer.size() - m->recorded_bytes));
 			if (n > 0) {
-				n = m->input.io_->read((char *)m->recording_buffer.data() + m->recorded_bytes, n);
+				n = m->input.read((char *)m->recording_buffer.data() + m->recorded_bytes, n);
 				setInputLevel((int16_t const *)(m->recording_buffer.data() + m->recorded_bytes), n / 2);
 				m->recorded_bytes += n;
 			}
-#else
-			int n = m->input.reader_.bytesAvailable();
-			n = std::min(n, int(m->recording_buffer.size() - m->recorded_bytes));
-			if (n > 0) {
-				n = m->input.reader_.read((char *)m->recording_buffer.data() + m->recorded_bytes, n);
-				setInputLevel((int16_t const *)(m->recording_buffer.data() + m->recorded_bytes), n / 2);
-				m->recorded_bytes += n;
-			}
-#endif
 			float percent = 100 * m->recorded_bytes / m->max_record_size;
 			ui->progressBar_recording->setValue(int(percent * 10));
-			goto done;
-		} else {
-			setState(State::Playing);
+			return;
 		}
+		setState(State::Playing);
 	}
 	{
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-		QByteArray ba = m->input.io_->readAll();
+		QByteArray ba = m->input.readAll();
 		if (ba.size() >= 2) {
 			setInputLevel((int16_t const *)ba.data(), ba.size() / 2);
 		}
 	}
-#else
-		auto len = m->input.reader_.bytesAvailable();
-		QByteArray ba = m->input.reader_.read(len);
-		if (ba.size() >= 2) {
-			setInputLevel((int16_t const *)ba.data(), ba.size() / 2);
-		}
-	}
-#endif
-done:;
 }
 
 void MainWindow::timerEvent(QTimerEvent *event)
@@ -206,10 +168,6 @@ void MainWindow::timerEvent(QTimerEvent *event)
 	if (m->state == State::Playing) {
 		int bytes = m->output.bytesFree();
 		if (m->play_bytes < m->recorded_bytes) {
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
-			int bytes2 = std::max(0, 4800 - (int)m->output.bufferedBytes());
-			bytes = std::min(bytes, bytes2);
-#endif
 			int n = std::min(bytes, m->recorded_bytes - m->play_bytes);
 			if (n >= 2) {
 				uint8_t const *begin = (uint8_t const *)m->recording_buffer.data() + m->play_bytes;
@@ -222,13 +180,11 @@ void MainWindow::timerEvent(QTimerEvent *event)
 				ui->progressBar_playback->setValue(int(percent * 10));
 			}
 			m->output.process(&m->output_buffer);
-			goto done;
-		} else {
-			setState(State::Stop);
+			return;
 		}
+		setState(State::Stop);
 	}
 	ui->widget_output_level->setPercent(0);
-done:;
 }
 
 void MainWindow::on_pushButton_start_clicked()
@@ -242,26 +198,10 @@ void MainWindow::on_pushButton_start_clicked()
 
 void MainWindow::on_comboBox_input_currentIndexChanged(int index)
 {
-//	if (m->input.audio_input) {
-//		disconnect(m->input.input_device, SIGNAL(readyRead()), this, SLOT(onReadyRead()));
-//		m->input.audio_input->stop();
-//		m->input.audio_input.reset();
-//	}
-
-//	if (index >= 0 && index < m->audio_input_devices.size()) {
-//		m->input.audio_input = std::shared_ptr<QAudioInput>(new QAudioInput(m->audio_input_devices[index], m->audio_format));
-//		m->input.input_device = m->input.audio_input->start();
-//		connect(m->input.input_device, SIGNAL(readyRead()), this, SLOT(onReadyRead()));
-//	}
+	m->input.start(m->input_devices.device(index), m->audio_format);
 }
 
 void MainWindow::on_comboBox_output_currentIndexChanged(int index)
 {
-//	if (m->audio_output) {
-//		m->audio_output->stop();
-//		m->audio_output.reset();
-//	}
-
-//	m->audio_output = std::shared_ptr<QAudioOutput>(new QAudioOutput(m->audio_output_devices[index], m->audio_format));
-//	m->output_device = m->audio_output->start();
+	m->output.start(m->output_devices.device(index), m->audio_format);
 }

@@ -2,11 +2,18 @@
 #include <QAudioFormat>
 #include <QAudioOutput>
 
-void MyAudioOutput::start(QAudioFormat const &format)
+void MyAudioOutput::start(AudioDevice const &dev, QAudioFormat const &format)
 {
+	stop();
 	output_ = std::make_shared<QAudioOutput>(format);
 	output_->setBufferSize(2000);
 	device_ = output_->start();
+}
+
+void MyAudioOutput::stop()
+{
+	output_.reset();
+	device_ = nullptr;
 }
 
 void MyAudioOutput::process(std::deque<uint8_t> *source)

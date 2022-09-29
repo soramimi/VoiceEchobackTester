@@ -50,8 +50,9 @@ qint64 QueueReader::size() const
 	return queue_->size();
 }
 
-void MyAudioInput::start(const QAudioFormat &format)
+void MyAudioInput::start(AudioDevice const &dev, const QAudioFormat &format)
 {
+	stop();
 	device_ = QMediaDevices::defaultAudioInput();
 	input_ = std::make_shared<QAudioInput>(device_);
 	source_ = std::make_shared<QAudioSource>(device_, format);
@@ -62,6 +63,13 @@ void MyAudioInput::start(const QAudioFormat &format)
 	source_->start(&writer_);
 }
 
+void MyAudioInput::stop()
+{
+	device_ = {};
+	input_.reset();
+	source_.reset();
+	queue_.clear();
+	writer_.close();
+	reader_.close();
 
-
-
+}

@@ -38,14 +38,22 @@ int OutputStream::writeInput(uint8_t const *ptr, int len)
 
 
 
-void MyAudioOutput::start(const QAudioFormat &format)
+void MyAudioOutput::start(AudioDevice const &dev, const QAudioFormat &format)
 {
+	stop();
 	device_ = QMediaDevices::defaultAudioOutput();
 	output_ = std::make_shared<QAudioOutput>(device_);
 	sink_ = std::make_shared<QAudioSink>(device_, format);
-//	sink_->setBufferSize(4);
 	out.open(QIODevice::ReadOnly);
 	sink_->start(&out);
+}
+
+void MyAudioOutput::stop()
+{
+	device_ = {};
+	output_.reset();
+	sink_.reset();
+	out.close();
 }
 
 void MyAudioOutput::process(std::deque<uint8_t> *q)

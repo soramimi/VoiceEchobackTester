@@ -8,6 +8,7 @@
 
 class QAudioOutput;
 class QAudioSink;
+class AudioDevice;
 
 class OutputStream : public QIODevice {
 public:
@@ -28,10 +29,17 @@ public:
 	std::shared_ptr<QAudioSink> sink_;
 	OutputStream out;
 
-	void start(const QAudioFormat &format);
+	void start(const AudioDevice &dev, const QAudioFormat &format);
+	void stop();
 	int bytesFree() const
 	{
-		return (int)sink_->bytesFree();
+		int n = bufferedBytes();
+		if (n < 4800) {
+			n = 4800 - n;
+			n = std::min(n, (int)sink_->bytesFree());
+			return n;
+		}
+		return 0;
 	}
 	void process(std::deque<uint8_t> *q);
 

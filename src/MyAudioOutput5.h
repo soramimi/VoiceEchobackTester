@@ -7,6 +7,7 @@
 
 class QAudioOutput;
 class QIODevice;
+class AudioDevice;
 
 class MyAudioOutput {
 public:
@@ -14,7 +15,8 @@ public:
 	int sample_fq_ = 48000;
 	std::shared_ptr<QAudioOutput> output_;
 	QIODevice *device_ = nullptr;
-	void start(const QAudioFormat &format);
+	void start(const AudioDevice &dev, const QAudioFormat &format);
+	void stop();
 	int bytesFree() const
 	{
 		return output_->bytesFree();

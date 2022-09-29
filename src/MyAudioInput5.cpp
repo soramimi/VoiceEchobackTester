@@ -2,8 +2,15 @@
 
 
 
-void MyAudioInput::start(QAudioFormat const &format)
+void MyAudioInput::start(AudioDevice const &dev, QAudioFormat const &format)
 {
+	stop();
 	input_ = std::shared_ptr<QAudioInput>(new QAudioInput(format));
-	io_ = input_->start();
+	reader_ = input_->start();
+}
+
+void MyAudioInput::stop()
+{
+	reader_ = nullptr;
+	input_.reset();
 }
