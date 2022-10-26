@@ -1,7 +1,8 @@
+#include "Audio.h"
 
-#include "AudioDevice.h"
+// Audio
 
-QAudioFormat MyAudio::defaultAudioFormat()
+QAudioFormat Audio::defaultAudioFormat()
 {
 	QAudioFormat format;
 #if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
@@ -18,10 +19,27 @@ QAudioFormat MyAudio::defaultAudioFormat()
 #endif
 	return format;
 }
+// AudioDevice
+
+AudioDevice::AudioDevice(const audio_device_t &dev)
+	: device_(dev)
+{
+}
+
+QString AudioDevice::text() const
+{
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+	return device_.deviceName();
+#else
+	return device_.description();
+#endif
+}
+
+// AudioDevices
 
 void AudioDevices::fetchDevices(Mode mode)
 {
-	devices.clear();
+	devices_.clear();
 #if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
 	QList<QAudioDeviceInfo> devs;
 	switch (mode) {
@@ -33,7 +51,7 @@ void AudioDevices::fetchDevices(Mode mode)
 		break;
 	}
 	for (QAudioDeviceInfo const &d : devs) {
-		devices.emplace_back(d);
+		devices_.emplace_back(d);
 	}
 #else
 	QList<QAudioDevice> devs;
@@ -46,20 +64,39 @@ void AudioDevices::fetchDevices(Mode mode)
 		break;
 	}
 	for (QAudioDevice const &d : devs) {
-		devices.emplace_back(d);
+		devices_.emplace_back(d);
 	}
 #endif
 }
 
 int AudioDevices::size() const
 {
-	return devices.size();
+	return devices_.size();
 }
 
 AudioDevice AudioDevices::device(int i)
 {
-	if (i >= 0 && i < devices.size()) {
-		return devices[i];
+	if (i >= 0 && i < devices_.size()) {
+		return devices_[i];
 	}
 	return {};
 }
+
+AudioDevice AudioDevices::defaultAudioInputDevice()
+{
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+	return AudioDevice::audio_device_t(QAudioDeviceInfo::defaultInputDevice());
+#else
+	return AudioDevice::audio_device_t(QMediaDevices::defaultAudioInput());
+#endif
+}
+
+AudioDevice AudioDevices::defaultAudioOutputDevice()
+{
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+	return AudioDevice::audio_device_t(QAudioDeviceInfo::defaultOutputDevice());
+#else
+	return AudioDevice::audio_device_t(QMediaDevices::defaultAudioOutput());
+#endif
+}
+

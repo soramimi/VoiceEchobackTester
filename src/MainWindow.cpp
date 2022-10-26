@@ -1,7 +1,7 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
 #include "MySettings.h"
-#include "AudioDevice.h"
+#include "Audio.h"
 #include <QBuffer>
 #include <QClipboard>
 #include <QFileDialog>
@@ -15,8 +15,8 @@ struct MainWindow::Private {
 	AudioDevices input_devices;
 	AudioDevices output_devices;
 	QAudioFormat audio_format;
-	MyAudioInput input;
-	MyAudioOutput output;
+	AudioInput input;
+	AudioOutput output;
 	std::deque<uint8_t> output_buffer;
 
 	int duration = 3;
@@ -45,7 +45,7 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->comboBox_length->addItem("5", QVariant(5));
 	ui->comboBox_length->addItem("10", QVariant(10));
 
-	m->audio_format = MyAudio::defaultAudioFormat();
+	m->audio_format = Audio::defaultAudioFormat();
 	m->input_devices.fetchDevices(AudioDevices::AudioInput);
 	m->output_devices.fetchDevices(AudioDevices::AudioOutput);
 	for (int i = 0; i < m->input_devices.size(); i++) {
@@ -62,10 +62,6 @@ MainWindow::MainWindow(QWidget *parent)
 
 	m->input.start(AudioDevices::defaultAudioInputDevice(), m->audio_format);
 	m->output.start(AudioDevices::defaultAudioOutputDevice(), m->audio_format);
-
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-	connect(m->input.reader_, &QIODevice::readyRead, this, &MainWindow::onReadyRead);
-#endif
 
 	ui->comboBox_length->setCurrentIndex(0);
 
@@ -136,7 +132,7 @@ void MainWindow::setOutputLevel(int16_t const *p, int n)
 	setLevel(p, n, ui->widget_output_level);
 }
 
-void MainWindow::onReadyRead()
+void MainWindow::inputAudio()
 {
 	if (m->state == State::Recording) {
 		if (m->recorded_bytes < m->max_record_size) {
@@ -163,7 +159,7 @@ void MainWindow::onReadyRead()
 
 void MainWindow::timerEvent(QTimerEvent *event)
 {
-	onReadyRead();
+	inputAudio();
 
 	if (m->state == State::Playing) {
 		int bytes = m->output.bytesFree();

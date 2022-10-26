@@ -35,19 +35,14 @@ private:
 	void setOutputLevel(const int16_t *p, int n);
 	void setLength(int seconds);
 	void setState(State state);
+	void inputAudio();
 public:
 	MainWindow(QWidget *parent = nullptr);
 	~MainWindow();
 private slots:
-	void onReadyRead();
-
-	// QObject interface
-	void on_pushButton_start_clicked();
-
 	void on_comboBox_input_currentIndexChanged(int index);
-
 	void on_comboBox_output_currentIndexChanged(int index);
-
+	void on_pushButton_start_clicked();
 protected:
 	void timerEvent(QTimerEvent *event);
 };

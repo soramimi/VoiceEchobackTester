@@ -16,20 +16,19 @@ DESTDIR = $$PWD/_bin
 win32:LIBS += -L"C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v7.1A\\Lib"
 
 SOURCES += \
-	src/AudioDevice.cpp \
+	src/Audio.cpp \
 	src/LevelMeterWidget.cpp \
 	src/MainWindow.cpp \
-	src/MyAudio.cpp \
 	src/MySettings.cpp \
 	src/TestWidget.cpp \
 	src/joinpath.cpp \
 	src/main.cpp
 
 HEADERS += \
-	src/AudioDevice.h \
+	src/Audio.h \
+	src/AudioAbstractIO.h \
 	src/LevelMeterWidget.h \
 	src/MainWindow.h \
-	src/MyAudio.h \
 	src/MySettings.h \
 	src/TestWidget.h \
 	src/joinpath.h \
@@ -40,18 +39,18 @@ FORMS += \
 
 qt5 {
 SOURCES += \
-	src/MyAudioInput5.cpp \
-	src/MyAudioOutput5.cpp
+	src/AudioInputQt5.cpp \
+	src/AudioOutputQt5.cpp
 HEADERS += \
-	src/MyAudioInput5.h \
-	src/MyAudioOutput5.h
+	src/AudioInputQt5.h \
+	src/AudioOutputQt5.h
 }
 
 qt6 {
 SOURCES += \
-	src/MyAudioInput6.cpp \
-	src/MyAudioOutput6.cpp
+	src/AudioInputQt6.cpp \
+	src/AudioOutputQt6.cpp
 HEADERS += \
-	src/MyAudioInput6.h \
-	src/MyAudioOutput6.h
+	src/AudioInputQt6.h \
+	src/AudioOutputQt6.h
 }
