@@ -1,3 +1,4 @@
+#include "Audio.h"
 #include "AudioOutputQt5.h"
 #include <QAudioFormat>
 #include <QAudioOutput>
@@ -6,6 +7,7 @@
 // MyAudioOutput
 
 struct AudioOutput::Private {
+	QString description;
 	int volume = 5000;
 	int sample_fq = 48000;
 	std::shared_ptr<QAudioOutput> output;
@@ -22,9 +24,16 @@ AudioOutput::~AudioOutput()
 	delete m;
 }
 
+QString AudioOutput::description()
+{
+	return m->description;
+}
+
+
 void AudioOutput::start(AudioDevice const &dev, QAudioFormat const &format)
 {
 	stop();
+	m->description = dev.device_.deviceName();
 	m->output = std::make_shared<QAudioOutput>(format);
 	m->output->setBufferSize(RECOMMENDED_BUFFER_SIZE);
 	m->device = m->output->start();

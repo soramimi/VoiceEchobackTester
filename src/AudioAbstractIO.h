@@ -1,6 +1,7 @@
 #ifndef AUDIOABSTRACTIO_H
 #define AUDIOABSTRACTIO_H
 
+#include <QString>
 #include <cstdint>
 #include <deque>
 
@@ -11,7 +12,8 @@ class QByteArray;
 class AbstractAudioInput {
 public:
 	const int RECOMMENDED_BUFFER_SIZE = 9600;
-	virtual ~AbstractAudioInput() {}
+	virtual ~AbstractAudioInput() = default;
+	virtual QString description() = 0;
 	virtual void start(const AudioDevice &dev, const QAudioFormat &format) = 0;
 	virtual void stop() = 0;
 	virtual int bytesAvailable() const = 0;
@@ -22,7 +24,8 @@ public:
 class AbstractAudioOutput {
 public:
 	const int RECOMMENDED_BUFFER_SIZE = 9600;
-	virtual ~AbstractAudioOutput() {}
+	virtual ~AbstractAudioOutput() = default;
+	virtual QString description() = 0;
 	virtual void start(const AudioDevice &dev, const QAudioFormat &format) = 0;
 	virtual void stop() = 0;
 	virtual int bytesFree() const = 0;

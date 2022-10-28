@@ -1,3 +1,4 @@
+#include "Audio.h"
 #include "AudioInputQt5.h"
 #include <QAudioInput>
 #include <memory>
@@ -5,6 +6,7 @@
 // MyAudioInput
 
 struct AudioInput::Private {
+	QString description;
 	std::shared_ptr<QAudioInput> input;
 	QIODevice *reader = nullptr;
 };
@@ -20,9 +22,15 @@ AudioInput::~AudioInput()
 	delete m;
 }
 
+QString AudioInput::description()
+{
+	return m->description;
+}
+
 void AudioInput::start(const AudioDevice &dev, QAudioFormat const &format)
 {
 	stop();
+	m->description = dev.device_.deviceName();
 	m->input = std::shared_ptr<QAudioInput>(new QAudioInput(format));
 	m->reader = m->input->start();
 }

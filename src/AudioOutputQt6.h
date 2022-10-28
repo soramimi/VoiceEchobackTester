@@ -10,6 +10,7 @@ private:
 public:
 	AudioOutput();
 	~AudioOutput() override;
+	QString description();
 	void start(const AudioDevice &dev, const QAudioFormat &format) override;
 	void stop() override;
 	int bytesFree() const override;

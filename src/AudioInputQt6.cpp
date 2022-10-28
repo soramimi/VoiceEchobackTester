@@ -3,6 +3,7 @@
 #include <QAudioDevice>
 #include <QAudioInput>
 #include <QAudioSource>
+#include <QDebug>
 #include <QIODevice>
 #include <QMediaDevices>
 #include <utility>
@@ -90,6 +91,11 @@ AudioInput::AudioInput()
 AudioInput::~AudioInput()
 {
 	delete m;
+}
+
+QString AudioInput::description()
+{
+	return m->device.description();
 }
 
 void AudioInput::start(const AudioDevice &dev, const QAudioFormat &format)

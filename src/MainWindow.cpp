@@ -46,22 +46,39 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->comboBox_length->addItem("10", QVariant(10));
 
 	m->audio_format = Audio::defaultAudioFormat();
-	m->input_devices.fetchDevices(AudioDevices::AudioInput);
-	m->output_devices.fetchDevices(AudioDevices::AudioOutput);
-	for (int i = 0; i < m->input_devices.size(); i++) {
-		AudioDevice dev = m->input_devices.device(i);
-		QString name = dev.text();
-		ui->comboBox_input->addItem(name, name);
-	}
-	for (int i = 0; i < m->output_devices.size(); i++) {
-		AudioDevice dev = m->output_devices.device(i);
-		QString name = dev.text();
-		ui->comboBox_output->addItem(name, name);
-	}
-
-
 	m->input.start(AudioDevices::defaultAudioInputDevice(), m->audio_format);
 	m->output.start(AudioDevices::defaultAudioOutputDevice(), m->audio_format);
+
+	m->input_devices.fetchDevices(AudioDevices::AudioInput);
+	m->output_devices.fetchDevices(AudioDevices::AudioOutput);
+	{
+		int sel = -1;
+		bool b = ui->comboBox_input->blockSignals(true);
+		for (int i = 0; i < m->input_devices.size(); i++) {
+			AudioDevice dev = m->input_devices.device(i);
+			QString name = dev.text();
+			ui->comboBox_input->addItem(name, name);
+			if (name == m->input.description()) {
+				sel = i;
+			}
+		}
+		ui->comboBox_input->blockSignals(b);
+		ui->comboBox_input->setCurrentIndex(sel);
+	}
+	{
+		int sel = -1;
+		bool b = ui->comboBox_output->blockSignals(true);
+		for (int i = 0; i < m->output_devices.size(); i++) {
+			AudioDevice dev = m->output_devices.device(i);
+			QString name = dev.text();
+			ui->comboBox_output->addItem(name, name);
+			if (name == m->output.description()) {
+				sel = i;
+			}
+		}
+		ui->comboBox_output->blockSignals(b);
+		ui->comboBox_output->setCurrentIndex(sel);
+	}
 
 	ui->comboBox_length->setCurrentIndex(0);
 
@@ -79,7 +96,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::setLength(int seconds)
 {
-	m->max_record_size = 48000 * 4 * seconds;
+	m->max_record_size = 48000 * sizeof(int16_t) * 2 * seconds;
 	m->recording_buffer.resize(m->max_record_size + 20000);
 }
 
