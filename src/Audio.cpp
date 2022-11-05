@@ -19,6 +19,7 @@ QAudioFormat Audio::defaultAudioFormat()
 #endif
 	return format;
 }
+
 // AudioDevice
 
 AudioDevice::AudioDevice(const audio_device_t &dev)

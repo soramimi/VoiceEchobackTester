@@ -9,4 +9,4 @@ public:
 	explicit MySettings(QObject *parent = nullptr);
 };
 
-#endif // MYSETTINGS_H
+#endif // SETTINGS_H

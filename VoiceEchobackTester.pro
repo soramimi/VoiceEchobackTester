@@ -10,7 +10,6 @@ lessThan(QT_MAJOR_VERSION, 6) {
 	CONFIG += qt5
 }
 
-
 DESTDIR = $$PWD/_bin
 
 win32:LIBS += -L"C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v7.1A\\Lib"

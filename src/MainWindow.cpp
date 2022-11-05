@@ -1,6 +1,5 @@
 #include "MainWindow.h"
 #include "ui_MainWindow.h"
-#include "MySettings.h"
 #include "Audio.h"
 #include <QBuffer>
 #include <QClipboard>
@@ -10,14 +9,13 @@
 #include <memory>
 #include <utility>
 
-
 struct MainWindow::Private {
 	AudioDevices input_devices;
 	AudioDevices output_devices;
 	QAudioFormat audio_format;
 	AudioInput input;
 	AudioOutput output;
-	std::deque<uint8_t> output_buffer;
+	OutputBuffer out;
 
 	int duration = 3;
 	size_t max_record_size = 0;
@@ -45,9 +43,11 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->comboBox_length->addItem("5", QVariant(5));
 	ui->comboBox_length->addItem("10", QVariant(10));
 
+	m->out.open(QIODevice::ReadOnly);
+
 	m->audio_format = Audio::defaultAudioFormat();
 	m->input.start(AudioDevices::defaultAudioInputDevice(), m->audio_format);
-	m->output.start(AudioDevices::defaultAudioOutputDevice(), m->audio_format);
+	m->output.start(AudioDevices::defaultAudioOutputDevice(), m->audio_format, &m->out);
 
 	m->input_devices.fetchDevices(AudioDevices::AudioInput);
 	m->output_devices.fetchDevices(AudioDevices::AudioOutput);
@@ -164,6 +164,7 @@ void MainWindow::inputAudio()
 			ui->progressBar_recording->setValue(int(percent * 10));
 			return;
 		}
+		ui->progressBar_recording->setValue(ui->progressBar_recording->maximum());
 		setState(State::Playing);
 	}
 	{
@@ -181,20 +182,19 @@ void MainWindow::timerEvent(QTimerEvent *event)
 	inputAudio();
 
 	if (m->state == State::Playing) {
-		int bytes = m->output.bytesFree();
+		int bytes = m->output.bytesFree(&m->out);
 		if (m->play_bytes < m->recorded_bytes) {
 			int n = std::min(bytes, m->recorded_bytes - m->play_bytes);
 			if (n >= 2) {
-				uint8_t const *begin = (uint8_t const *)m->recording_buffer.data() + m->play_bytes;
-				uint8_t const *end = begin + n;
-				m->output_buffer.insert(m->output_buffer.end(), begin, end);
+				uint8_t const *p = (uint8_t const *)m->recording_buffer.data() + m->play_bytes;
+				m->output.write(p, n, &m->out);
+
 				setOutputLevel((int16_t const *)(m->recording_buffer.data() + m->play_bytes), n / 2);
 				m->play_bytes += n;
 				bytes -= n;
 				float percent = 100.0f * (float)m->play_bytes / (float)m->recorded_bytes;
 				ui->progressBar_playback->setValue(int(percent * 10));
 			}
-			m->output.process(&m->output_buffer);
 			return;
 		}
 		setState(State::Stop);
@@ -218,5 +218,5 @@ void MainWindow::on_comboBox_input_currentIndexChanged(int index)
 
 void MainWindow::on_comboBox_output_currentIndexChanged(int index)
 {
-	m->output.start(m->output_devices.device(index), m->audio_format);
+	m->output.start(m->output_devices.device(index), m->audio_format, &m->out);
 }

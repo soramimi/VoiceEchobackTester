@@ -1,15 +1,13 @@
-#include "Audio.h"
 #include "AudioOutputQt5.h"
+#include "Audio.h"
 #include <QAudioFormat>
 #include <QAudioOutput>
 #include <memory>
 
-// MyAudioOutput
+// AudioOutput
 
 struct AudioOutput::Private {
 	QString description;
-	int volume = 5000;
-	int sample_fq = 48000;
 	std::shared_ptr<QAudioOutput> output;
 	QIODevice *device = nullptr;
 };
@@ -30,9 +28,11 @@ QString AudioOutput::description()
 }
 
 
-void AudioOutput::start(AudioDevice const &dev, QAudioFormat const &format)
+void AudioOutput::start(AudioDevice const &dev, QAudioFormat const &format, QIODevice *out)
 {
+	(void)out;
 	stop();
+	RECOMMENDED_BUFFER_SIZE = format.bytesForFrames(1) * format.sampleRate() / 20;
 	m->description = dev.device_.deviceName();
 	m->output = std::make_shared<QAudioOutput>(format);
 	m->output->setBufferSize(RECOMMENDED_BUFFER_SIZE);
@@ -45,17 +45,20 @@ void AudioOutput::stop()
 	m->device = nullptr;
 }
 
-int AudioOutput::bytesFree() const
+int AudioOutput::bytesFree(OutputBuffer *out) const
 {
+	(void)out;
 	return m->output->bytesFree();
 }
 
-void AudioOutput::process(std::deque<uint8_t> *source)
+void AudioOutput::write(uint8_t const *ptr, int len, OutputBuffer *outbuf)
 {
+	outbuf->queue_.insert(outbuf->queue_.end(), ptr, ptr + len);
+
 	std::vector<uint8_t> buf;
-	int n = std::min((int)source->size(), m->output->bytesFree());
-	buf.insert(buf.end(), source->begin(), source->begin() + n);
-	m->device->write((char const *)buf.data(), buf.size());
-	source->erase(source->begin(), source->begin() + n);
+	int n = std::min((int)outbuf->queue_.size(), m->output->bytesFree());
+	buf.insert(buf.end(), outbuf->queue_.begin(), outbuf->queue_.begin() + n);
+	m->device->write((char const *)buf.data(), (int)buf.size());
+	outbuf->queue_.erase(outbuf->queue_.begin(), outbuf->queue_.begin() + n);
 }
 

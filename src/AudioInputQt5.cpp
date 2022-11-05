@@ -3,7 +3,7 @@
 #include <QAudioInput>
 #include <memory>
 
-// MyAudioInput
+// AudioInput
 
 struct AudioInput::Private {
 	QString description;

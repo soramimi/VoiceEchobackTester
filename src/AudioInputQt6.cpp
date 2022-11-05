@@ -76,7 +76,7 @@ qint64 QueueReader::size() const
 
 } // namespace
 
-// MyAudioInput
+// AudioInput
 
 struct AudioInput::Private {
 	QAudioDevice device;
