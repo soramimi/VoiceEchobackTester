@@ -17,6 +17,8 @@ public:
 	std::deque<uint8_t> *queue_;
 	qint64 readData(char *data, qint64 len) override
 	{
+		(void)data;
+		(void)len;
 		return 0;
 	}
 	qint64 writeData(const char *data, qint64 len) override
@@ -49,7 +51,7 @@ public:
 
 qint64 QueueReader::readData(char *data, qint64 len)
 {
-	size_t n = (size_t)std::min(len, (qint64)queue_->size());
+	qint64 n = std::min(len, (qint64)queue_->size());
 	std::copy(queue_->begin(), queue_->begin() + n, data);
 	queue_->erase(queue_->begin(), queue_->begin() + n);
 	return n;
@@ -57,17 +59,19 @@ qint64 QueueReader::readData(char *data, qint64 len)
 
 qint64 QueueReader::writeData(const char *data, qint64 len)
 {
+	(void)data;
+	(void)len;
 	return 0;
 }
 
 qint64 QueueReader::bytesAvailable() const
 {
-	return queue_->size();
+	return (int)queue_->size();
 }
 
 qint64 QueueReader::size() const
 {
-	return queue_->size();
+	return (int)queue_->size();
 }
 
 } // namespace
@@ -123,12 +127,12 @@ void AudioInput::stop()
 
 int AudioInput::bytesAvailable() const
 {
-	return m->reader.bytesAvailable();
+	return (int)m->reader.bytesAvailable();
 }
 
 int AudioInput::read(char *data, int maxlen)
 {
-	return m->reader.read(data, maxlen);
+	return (int)m->reader.read(data, maxlen);
 }
 
 QByteArray AudioInput::readAll()

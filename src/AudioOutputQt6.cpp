@@ -12,16 +12,17 @@ namespace {
 
 class OutputStream : public QIODevice {
 private:
-	const size_t MINSAMPLES = 4;
-	const size_t MINSIZE = sizeof(int16_t) * 2 * MINSAMPLES;
+	const int MINSAMPLES = 4;
+	const int MINSIZE = int(sizeof(int16_t) * 2 * MINSAMPLES);
 public:
 	std::deque<uint8_t> queue_;
 	qint64 readData(char *data, qint64 len) override
 	{
-		size_t n = std::min(MINSIZE, queue_.size());
+		int n = std::min((int)len, (int)queue_.size());
+		n = std::min(n, MINSIZE);
 		if (n > 0) {
-			std::copy(queue_.begin(), queue_.begin() + n, data);
-			queue_.erase(queue_.begin(), queue_.begin() + n);
+			std::copy(queue_.begin(), queue_.begin() + (int)n, data);
+			queue_.erase(queue_.begin(), queue_.begin() + (int)n);
 		}
 		if (queue_.empty()) {
 			if (n & 1) {
@@ -33,19 +34,21 @@ public:
 				n += sizeof(int16_t);
 			}
 		}
-		return n;
+		return (qint64)n;
 	}
 	qint64 writeData(const char *data, qint64 len) override
 	{
+		(void)data;
+		(void)len;
 		return 0;
 	}
 	qint64 bytesAvailable() const override
 	{
-		return std::min(MINSIZE, (size_t)queue_.size());
+		return std::min(MINSIZE, (int)queue_.size());
 	}
 	qint64 size() const override
 	{
-		return std::min(MINSIZE, (size_t)queue_.size());
+		return std::min(MINSIZE, (int)queue_.size());
 	}
 	int write(uint8_t const *ptr, int len)
 	{
@@ -103,7 +106,7 @@ void AudioOutput::stop()
 
 int AudioOutput::bytesFree() const
 {
-	int n = m->out.queue_.size();
+	int n = (int)m->out.queue_.size();
 	if (n < RECOMMENDED_BUFFER_SIZE) {
 		n = RECOMMENDED_BUFFER_SIZE - n;
 		n = std::min(n, (int)m->sink->bytesFree());
@@ -117,7 +120,7 @@ void AudioOutput::process(std::deque<uint8_t> *source)
 	int n = std::min((int)source->size(), (int)m->sink->bytesFree());
 	std::vector<uint8_t> buf;
 	buf.insert(buf.end(), source->begin(), source->begin() + n);
-	m->out.write(buf.data(), buf.size());
+	m->out.write(buf.data(), (int)buf.size());
 	source->erase(source->begin(), source->begin() + n);
 }
 

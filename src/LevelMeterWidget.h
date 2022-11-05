@@ -8,7 +8,7 @@ class LevelMeterWidget : public QWidget {
 private:
 	float percent_ = 0;
 protected:
-	void paintEvent(QPaintEvent *event);
+	void paintEvent(QPaintEvent *event) override;
 public:
 	explicit LevelMeterWidget(QWidget *parent = nullptr);
 	void setPercent(float percent);

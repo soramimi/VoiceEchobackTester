@@ -59,9 +59,9 @@ std::string joinpath(std::string const &left, std::string const &right)
 
 QString qjoinpath(ushort const *left, ushort const *right)
 {
-    std::vector<ushort> vec;
+	std::vector<ushort> vec;
 	joinpath_(left, right, &vec);
-    if (vec.empty()) return QString();
-    return QString::fromUtf16(&vec[0], vec.size());
+	if (vec.empty()) return QString();
+	return QString::fromUtf16(&vec[0], (int)vec.size());
 }
 

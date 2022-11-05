@@ -3,7 +3,7 @@
 
 #include "main.h"
 #include <QDialog>
-#include <stdint.h>
+#include <cstdint>
 
 class Video;
 
@@ -27,7 +27,7 @@ class MainWindow : public QDialog {
 	friend class ThumbnailCache;
 private:
 	Ui::MainWindow *ui;
-    struct Private;
+	struct Private;
 	Private *m;
 	void start();
 	void setLevel(const int16_t *p, int n, LevelMeterWidget *w);
@@ -38,12 +38,12 @@ private:
 	void inputAudio();
 public:
 	MainWindow(QWidget *parent = nullptr);
-	~MainWindow();
+	~MainWindow() override;
 private slots:
 	void on_comboBox_input_currentIndexChanged(int index);
 	void on_comboBox_output_currentIndexChanged(int index);
 	void on_pushButton_start_clicked();
 protected:
-	void timerEvent(QTimerEvent *event);
+	void timerEvent(QTimerEvent *event) override;
 };
 #endif // MAINWINDOW_H

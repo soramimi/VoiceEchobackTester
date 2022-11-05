@@ -71,12 +71,12 @@ void AudioDevices::fetchDevices(Mode mode)
 
 int AudioDevices::size() const
 {
-	return devices_.size();
+	return (int)devices_.size();
 }
 
 AudioDevice AudioDevices::device(int i)
 {
-	if (i >= 0 && i < devices_.size()) {
+	if (i >= 0 && i < (int)devices_.size()) {
 		return devices_[i];
 	}
 	return {};

@@ -135,7 +135,7 @@ void MainWindow::setLevel(int16_t const *p, int n, LevelMeterWidget *w)
 	for (int i = 0; i < n; i++) {
 		v = std::max(v, abs(p[i]));
 	}
-	float percent = v / 32768.0;
+	float percent = (float)v / 32768.0f;
 	w->setPercent(percent);
 }
 
@@ -160,7 +160,7 @@ void MainWindow::inputAudio()
 				setInputLevel((int16_t const *)(m->recording_buffer.data() + m->recorded_bytes), n / 2);
 				m->recorded_bytes += n;
 			}
-			float percent = 100 * m->recorded_bytes / m->max_record_size;
+			float percent = 100.0f * (float)m->recorded_bytes / (float)m->max_record_size;
 			ui->progressBar_recording->setValue(int(percent * 10));
 			return;
 		}
@@ -169,13 +169,15 @@ void MainWindow::inputAudio()
 	{
 		QByteArray ba = m->input.readAll();
 		if (ba.size() >= 2) {
-			setInputLevel((int16_t const *)ba.data(), ba.size() / 2);
+			setInputLevel((int16_t const *)ba.data(), (int)ba.size() / 2);
 		}
 	}
 }
 
 void MainWindow::timerEvent(QTimerEvent *event)
 {
+	(void)event;
+
 	inputAudio();
 
 	if (m->state == State::Playing) {
@@ -189,7 +191,7 @@ void MainWindow::timerEvent(QTimerEvent *event)
 				setOutputLevel((int16_t const *)(m->recording_buffer.data() + m->play_bytes), n / 2);
 				m->play_bytes += n;
 				bytes -= n;
-				float percent = 100 * m->play_bytes / m->recorded_bytes;
+				float percent = 100.0f * (float)m->play_bytes / (float)m->recorded_bytes;
 				ui->progressBar_playback->setValue(int(percent * 10));
 			}
 			m->output.process(&m->output_buffer);

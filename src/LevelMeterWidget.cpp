@@ -1,5 +1,4 @@
 #include "LevelMeterWidget.h"
-
 #include <QPainter>
 
 LevelMeterWidget::LevelMeterWidget(QWidget *parent)
@@ -9,11 +8,12 @@ LevelMeterWidget::LevelMeterWidget(QWidget *parent)
 
 void LevelMeterWidget::paintEvent(QPaintEvent *event)
 {
+(void)event;
 	QPainter pr(this);
 	QRect r = rect();
 	pr.fillRect(r, Qt::black);
 	r.adjust(1, 1, -1, -1);
-	r.setWidth(r.width() * percent_);
+	r.setWidth(int((float)r.width() * percent_));
 	pr.fillRect(r, Qt::green);
 }
 
