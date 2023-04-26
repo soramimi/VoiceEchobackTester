@@ -12,7 +12,6 @@ namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
 class LevelMeterWidget;
-class TestWidget;
 
 enum class State {
 	Stop,
@@ -34,8 +33,8 @@ private:
 	void setInputLevel(const int16_t *p, int n);
 	void setOutputLevel(const int16_t *p, int n);
 	void setLength(int seconds);
-	void setState(State state);
-	void inputAudio();
+    void setState(State state);
+    void inputAudio();
 public:
 	MainWindow(QWidget *parent = nullptr);
 	~MainWindow() override;

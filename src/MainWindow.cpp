@@ -3,6 +3,7 @@
 #include "Audio.h"
 #include <QBuffer>
 #include <QClipboard>
+#include <QDebug>
 #include <QFileDialog>
 #include <QMessageBox>
 #include <deque>
@@ -16,6 +17,7 @@ struct MainWindow::Private {
 	AudioInput input;
 	AudioOutput output;
 	OutputBuffer out;
+	QIODevice *audio_output_source = nullptr;
 
 	int duration = 3;
 	size_t max_record_size = 0;
@@ -43,11 +45,15 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->comboBox_length->addItem("5", QVariant(5));
 	ui->comboBox_length->addItem("10", QVariant(10));
 
-	m->out.open(QIODevice::ReadOnly);
-
 	m->audio_format = Audio::defaultAudioFormat();
+	m->audio_format.setChannelCount(1);
+	m->audio_format.setSampleRate(8000);
+	m->out.start();
+
+	m->audio_output_source = &m->out;
+
 	m->input.start(AudioDevices::defaultAudioInputDevice(), m->audio_format);
-	m->output.start(AudioDevices::defaultAudioOutputDevice(), m->audio_format, &m->out);
+	m->output.start(AudioDevices::defaultAudioOutputDevice(), m->audio_format, m->audio_output_source);
 
 	m->input_devices.fetchDevices(AudioDevices::AudioInput);
 	m->output_devices.fetchDevices(AudioDevices::AudioOutput);
@@ -96,8 +102,9 @@ MainWindow::~MainWindow()
 
 void MainWindow::setLength(int seconds)
 {
-	m->max_record_size = 48000 * sizeof(int16_t) * 2 * seconds;
-	m->recording_buffer.resize(m->max_record_size + 20000);
+	qDebug() << m->audio_format.sampleRate() << m->audio_format.channelCount() << seconds;
+	m->max_record_size = m->audio_format.sampleRate() * sizeof(int16_t) * m->audio_format.channelCount() * seconds;
+	m->recording_buffer.resize(m->max_record_size);
 }
 
 void MainWindow::setState(State state)
@@ -121,7 +128,7 @@ void MainWindow::setState(State state)
 void MainWindow::start()
 {
 	m->duration = ui->comboBox_length->currentData().toInt();
-	setLength(m->duration + 1);
+	setLength(m->duration);
 	ui->progressBar_recording->setValue(0);
 	ui->progressBar_playback->setValue(0);
 	m->recorded_bytes = 0;
@@ -165,6 +172,7 @@ void MainWindow::inputAudio()
 			return;
 		}
 		ui->progressBar_recording->setValue(ui->progressBar_recording->maximum());
+		m->out.writeInput(m->recording_buffer.data(), m->recording_buffer.size());
 		setState(State::Playing);
 	}
 	{
@@ -175,6 +183,8 @@ void MainWindow::inputAudio()
 	}
 }
 
+
+
 void MainWindow::timerEvent(QTimerEvent *event)
 {
 	(void)event;
@@ -182,17 +192,11 @@ void MainWindow::timerEvent(QTimerEvent *event)
 	inputAudio();
 
 	if (m->state == State::Playing) {
-		int bytes = m->output.bytesFree(&m->out);
-		if (m->play_bytes < m->recorded_bytes) {
-			int n = std::min(bytes, m->recorded_bytes - m->play_bytes);
-			if (n >= 2) {
-				uint8_t const *p = (uint8_t const *)m->recording_buffer.data() + m->play_bytes;
-				m->output.write(p, n, &m->out);
-
-				setOutputLevel((int16_t const *)(m->recording_buffer.data() + m->play_bytes), n / 2);
-				m->play_bytes += n;
-				bytes -= n;
-				float percent = 100.0f * (float)m->play_bytes / (float)m->recorded_bytes;
+		float total = m->recording_buffer.size();//m->total_length;
+		float remain = m->out.bytesRemain();
+		if (total > 0 && remain > 0) {
+			if (total > 0) {
+				float percent = (total - remain) / total * 100.0f;
 				ui->progressBar_playback->setValue(int(percent * 10));
 			}
 			return;
@@ -207,6 +211,7 @@ void MainWindow::on_pushButton_start_clicked()
 	if (m->state == State::Stop) {
 		start();
 	} else {
+		m->out.clearInput();
 		setState(State::Stop);
 	}
 }
@@ -218,5 +223,5 @@ void MainWindow::on_comboBox_input_currentIndexChanged(int index)
 
 void MainWindow::on_comboBox_output_currentIndexChanged(int index)
 {
-	m->output.start(m->output_devices.device(index), m->audio_format, &m->out);
+	m->output.start(m->output_devices.device(index), m->audio_format, m->audio_output_source);
 }
