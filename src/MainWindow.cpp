@@ -46,9 +46,7 @@ MainWindow::MainWindow(QWidget *parent)
 	ui->comboBox_length->addItem("10", QVariant(10));
 
 	m->audio_format = Audio::defaultAudioFormat();
-	m->audio_format.setChannelCount(1);
-	m->audio_format.setSampleRate(8000);
-	m->out.start();
+	m->out.start(m->audio_format);
 
 	m->audio_output_source = &m->out;
 

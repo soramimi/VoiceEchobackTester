@@ -51,12 +51,16 @@ public:
 class OutputBuffer : public QIODevice {
 	friend class AudioOutput;
 private:
-	const int MINSIZE = 200;
+	/** The recommended buffer size for the audio format. (Windows)
+	 *   512 for 16-bit mono 48kHz
+	 *   200 for 16-bit mono 8kHz
+	 */
+	int buffer_size_ = 320;
 	std::deque<uint8_t> queue_;
 	qint64 readData(char *data, qint64 len) override
 	{
 		int n = std::min((int)len, (int)queue_.size());
-		n = std::min(n, MINSIZE);
+		n = std::min(n, buffer_size_);
 		if (n > 0) {
 			std::copy(queue_.begin(), queue_.begin() + (int)n, data);
 			queue_.erase(queue_.begin(), queue_.begin() + (int)n);
@@ -66,7 +70,7 @@ private:
 				data[n] = 0;
 				n++;
 			}
-			while (n < MINSIZE) {
+			while (n < buffer_size_) {
 				*(int16_t *)(data + n) = 0;
 				n += sizeof(int16_t);
 			}
@@ -81,11 +85,12 @@ private:
 	}
 	qint64 bytesAvailable() const override
 	{
-		return std::max(MINSIZE, (int)queue_.size());
+		return std::max(buffer_size_, (int)queue_.size());
 	}
 public:
-	void start()
+	void start(QAudioFormat const &format)
 	{
+		buffer_size_ = format.bytesForFrames(1) * format.sampleRate() / 64;
 		open(QIODevice::ReadOnly);
 	}
 	qint64 bytesRemain() const
